@@ -112,14 +112,15 @@ app.post('/signup', function(req, res) {
   // query the database for existing usernames
   db.knex.select('username').from('users').where({username: username})
   .then(function(data) {
-    if (data) {
+    console.log('DATA', data);
+    if (data.length === 0) {
       new User({username: username, password: password}).fetch()
       .then(function(err, success) {
       // create session and loads index
         Users.create({
           username: username,
           password: password
-        })
+        });
 
         req.session.regenerate(function() {
           req.session.user = username;
