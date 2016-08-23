@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -16,6 +17,7 @@ var app = express();
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
+app.use(session({secret: 'default'}));
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
 // Parse forms (signup/login)
@@ -90,7 +92,7 @@ app.post('/login', function(request, response) {
   if (username === 'demo' && password === 'demo') {
     request.session.regenerate(function() {
       request.session.user = username;
-      response.redirect('index');
+      response.render('index');
     });
   } else {
     res.redirect('login');
@@ -100,6 +102,33 @@ app.post('/login', function(request, response) {
 
 app.get('/signup', function(req, res) {
   res.render('signup');
+});
+
+app.post('/signup', function(req, res) {
+  var username = JSON.stringify(req.body.username);
+  var password = JSON.stringify(req.body.password);
+
+  // db.knex.insert({username: 'demo'}).into('users');
+  // query the database for existing usernames
+  db.knex.select('username').from('users').where({username: username})
+  .then(function(data) {
+    if (data) {
+      new User({username: username, password: password}).fetch()
+      .then(function(err, success) {
+      // create session and loads index
+        Users.create({
+          username: username,
+          password: password
+        })
+
+        req.session.regenerate(function() {
+          req.session.user = username;
+          res.render('index');
+        });
+      });
+    }
+  });
+
 });
 
 
