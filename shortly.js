@@ -25,7 +25,8 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/', 
 function(req, res) {
-  res.render('index');
+  res.redirect('login');
+  // res.render('index');
 });
 
 app.get('/create', 
@@ -76,6 +77,30 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/login', function(req, res) {
+  res.render('login');
+});
+
+app.post('/login', function(request, response) {
+ 
+  var username = request.body.username;
+  var password = request.body.password;
+
+  //Todo: update pw checking method
+  if (username === 'demo' && password === 'demo') {
+    request.session.regenerate(function() {
+      request.session.user = username;
+      response.redirect('index');
+    });
+  } else {
+    res.redirect('login');
+  }    
+});
+
+
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
 
 
 /************************************************************/
