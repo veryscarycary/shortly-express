@@ -62,10 +62,18 @@ function(req, res) {
           return res.sendStatus(404);
         }
 
-        Links.create({
-          url: uri,
-          title: title,
-          baseUrl: req.headers.origin
+        var user = req.session.user;
+        db.knex.select('id').from('users').where({username: user}).then(function(result) {
+          console.log(result);
+          user = result[0]['id'];
+        }).then(function(err, result) {
+        // adding a link model to the Links collection
+          Links.create({
+            url: uri,
+            title: title,
+            baseUrl: req.headers.origin,
+            userID: user
+          });
         })
         .then(function(newLink) {
           res.status(200).send(newLink);
