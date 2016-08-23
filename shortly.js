@@ -39,8 +39,13 @@ function(req, res) {
 app.get('/links', 
 function(req, res) {
   Links.reset().fetch().then(function(links) {
-    res.status(200).send(links.models);
+
+    links = links.filter(function (link) { return link.get('userId') === req.session.userId; });
+    res.status(200).send(links);
   });
+  // Links.reset().fetch().then(function(links) {
+  //   res.status(200).send(links.models);
+  // });
 });
 
 app.post('/links', 
@@ -72,7 +77,7 @@ function(req, res) {
             url: uri,
             title: title,
             baseUrl: req.headers.origin,
-            userID: user
+            userId: user
           });
         })
         .then(function(newLink) {
@@ -91,29 +96,30 @@ app.get('/login', function(req, res) {
   res.render('login');
 });
 
-app.post('/login', function(request, response) {
+app.post('/login', function(req, res) {
  
-  var username = request.body.username;
-  var password = request.body.password;
+  var username = req.body.username;
+  var password = req.body.password;
 
   console.log('username: ', username);
   console.log('pw: ', password);
 
 
-  db.knex.select('username', 'password').from('users').where({username: username})
+  db.knex.select('username', 'password', 'id').from('users').where({username: username})
   .then(function(data) {
     console.log('DATA', data);
     if (data.length === 0) {
-      response.redirect('login');
+      res.redirect('login');
     } else {
   //Todo: update pw checking method
       if (password === data[0]['password']) {
-        request.session.regenerate(function() {
-          request.session.user = username;
-          response.render('index');
+        req.session.regenerate(function() {
+          req.session.user = username;
+          req.session.userId = data[0]['id'];
+          res.render('index');
         });
       } else {
-        response.redirect('login');
+        res.redirect('login');
       }    
     }
   });
@@ -141,11 +147,11 @@ app.post('/signup', function(req, res) {
           username: username,
           password: password
         });
-
-        req.session.regenerate(function() {
-          req.session.user = username;
-          res.render('index');
-        });
+        res.redirect('login');
+        // req.session.regenerate(function() {
+        //   req.session.user = username;
+        //   res.render('index');
+        // });
       });
     }
   });
