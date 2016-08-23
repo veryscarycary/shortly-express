@@ -88,15 +88,27 @@ app.post('/login', function(request, response) {
   var username = request.body.username;
   var password = request.body.password;
 
+  console.log('username: ', username);
+  console.log('pw: ', password);
+
+
+  db.knex.select('username', 'password').from('users').where({username: username})
+  .then(function(data) {
+    console.log('DATA', data);
+    if (data.length === 0) {
+      response.redirect('login');
+    } else {
   //Todo: update pw checking method
-  if (username === 'demo' && password === 'demo') {
-    request.session.regenerate(function() {
-      request.session.user = username;
-      response.render('index');
-    });
-  } else {
-    res.redirect('login');
-  }    
+      if (password === data[0]['password']) {
+        request.session.regenerate(function() {
+          request.session.user = username;
+          response.render('index');
+        });
+      } else {
+        response.redirect('login');
+      }    
+    }
+  });
 });
 
 
@@ -105,8 +117,8 @@ app.get('/signup', function(req, res) {
 });
 
 app.post('/signup', function(req, res) {
-  var username = JSON.stringify(req.body.username);
-  var password = JSON.stringify(req.body.password);
+  var username = req.body.username;
+  var password = req.body.password;
 
   // db.knex.insert({username: 'demo'}).into('users');
   // query the database for existing usernames
