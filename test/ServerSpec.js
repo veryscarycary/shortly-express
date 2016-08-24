@@ -63,7 +63,7 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    xbeforeEach(function(done) {
+    beforeEach(function(done) {
       // create a user that we can then log-in with
       new User({
         'username': 'Phillip',
@@ -125,6 +125,7 @@ describe('', function() {
           db.knex('urls')
             .where('url', '=', 'http://roflzoo.com/')
             .then(function(urls) {
+              console.log("result:", urls);
               if (urls['0'] && urls['0']['url']) {
                 var foundUrl = urls['0']['url'];
               }
@@ -134,7 +135,7 @@ describe('', function() {
         });
       });
 
-      it('Fetches the link url title', function (done) {
+      xit('Fetches the link url title', function (done) {
         requestWithSession(options, function(error, res, body) {
           db.knex('urls')
             .where('title', '=', 'Funny pictures of animals, funny dog pictures')
@@ -196,7 +197,7 @@ describe('', function() {
         });
       });
 
-      it('Returns all of the links to display on the links page', function(done) {
+      xit('Returns all of the links to display on the links page', function(done) {
         var options = {
           'method': 'GET',
           'uri': 'http://127.0.0.1:4568/links'
@@ -238,7 +239,7 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function() {
+  describe('Account Creation:', function() {
 
     it('Signup creates a user record', function(done) {
       var options = {
@@ -286,7 +287,7 @@ describe('', function() {
 
   }); // 'Account Creation'
 
-  xdescribe('Account Login:', function() {
+  describe('Account Login:', function() {
 
     var requestWithSession = request.defaults({jar: true});
 

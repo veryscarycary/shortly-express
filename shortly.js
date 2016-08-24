@@ -37,16 +37,25 @@ function(req, res) {
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  if (req.session.user) {
+    res.render('index'); 
+  } else {
+    res.redirect('login');
+  }
 });
 
 app.get('/links', 
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
+  if(!req.session.user) {
+    res.redirect('login');
+  } else {
+    Links.reset().fetch().then(function(links) {
 
-    links = links.filter(function (link) { return link.get('userId') === req.session.userId; });
-    res.status(200).send(links);
-  });
+      links = links.filter(function (link) { return link.get('userId') === req.session.userId; });
+      res.status(200).send(links);
+    });
+    
+  }
   // Links.reset().fetch().then(function(links) {
   //   res.status(200).send(links.models);
   // });
@@ -63,7 +72,7 @@ function(req, res) {
 
   new Link({ url: uri }).fetch().then(function(found) {
     if (found) {
-      res.status(200).send(found.attributes);
+      res.status(201).send(found.attributes);
     } else {
       util.getUrlTitle(uri, function(err, title) {
         if (err) {
@@ -84,8 +93,8 @@ function(req, res) {
             userId: user
           });
         })
-        .then(function(newLink) {
-          res.status(200).send(newLink);
+        .then(function() {
+          res.status(201).send({url: uri});
         });
       });
     }
@@ -118,7 +127,6 @@ app.post('/login', function(req, res) {
 
   db.knex.select('username', 'password', 'id').from('users').where({username: username})
   .then(function(data) {
-    console.log('DATA', data);
     if (data.length === 0) {
       res.redirect('login');
     } else {
@@ -127,7 +135,7 @@ app.post('/login', function(req, res) {
         req.session.regenerate(function() {
           req.session.user = username;
           req.session.userId = data[0]['id'];
-          res.render('index');
+          res.redirect('/');
         });
       } else {
         res.redirect('login');
@@ -163,16 +171,24 @@ app.post('/signup', function(req, res) {
         Users.create({
           username: username,
           password: password
+        }).then(function(result) {
+          db.knex.select('username', 'id').from('users').where({username: username})
+          .then(function(result) {
+            console.log('RESULT', result);
+            req.session.regenerate(function() {
+              req.session.user = username;
+              req.session.userId = result[0]['id'];
+              res.redirect('/');
+              console.log('RES.HEADERS', res.headers);
+            });
+          });
         });
-        res.redirect('login');
-        // req.session.regenerate(function() {
-        //   req.session.user = username;
-        //   res.render('index');
-        // });
       });
     }
   });
+        
 
+        // res.redirect('login');
 });
 
 
