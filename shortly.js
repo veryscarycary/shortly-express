@@ -128,7 +128,7 @@ app.post('/login', function(req, res) {
   db.knex.select('username', 'password', 'id').from('users').where({username: username})
   .then(function(data) {
     if (data.length === 0) {
-      res.redirect('login');
+      res.redirect('/login');
     } else {
   //Todo: update pw checking method
       if (password === data[0]['password']) {
