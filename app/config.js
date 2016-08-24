@@ -30,6 +30,7 @@ db.knex.schema.hasTable('clicks').then(function(exists) {
     db.knex.schema.createTable('clicks', function (click) {
       click.increments('id').primary();
       click.integer('linkId');
+      
       click.timestamps();
     }).then(function (table) {
       console.log('Created Table', table);

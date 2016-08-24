@@ -27,7 +27,11 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/', 
 function(req, res) {
-  res.redirect('login');
+  if (req.session.user) {
+    res.render('index');
+  } else {
+    res.redirect('login');
+  }
   // res.render('index');
 });
 
@@ -93,8 +97,15 @@ function(req, res) {
 /************************************************************/
 
 app.get('/login', function(req, res) {
+  // if (req.session.user) {
+  //   req.session.destroy(function() {
+  //     res.render('login');
+  //   });
+  // } else {
   res.render('login');
+  // }
 });
+
 
 app.post('/login', function(req, res) {
  
@@ -125,6 +136,12 @@ app.post('/login', function(req, res) {
   });
 });
 
+app.get('/logout', function(req, res) {
+  console.log('logout request received');
+  req.session.destroy(function() {
+    res.redirect('/');
+  });
+});
 
 app.get('/signup', function(req, res) {
   res.render('signup');
