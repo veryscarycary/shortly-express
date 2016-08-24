@@ -4,13 +4,13 @@ var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 
-
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+var bcrypt = require('bcryptjs');
 
 var app = express();
 
@@ -46,7 +46,7 @@ function(req, res) {
 
 app.get('/links', 
 function(req, res) {
-  if(!req.session.user) {
+  if (!req.session.user) {
     res.redirect('login');
   } else {
     Links.reset().fetch().then(function(links) {
@@ -82,7 +82,6 @@ function(req, res) {
 
         var user = req.session.user;
         db.knex.select('id').from('users').where({username: user}).then(function(result) {
-          console.log(result);
           user = result[0]['id'];
         }).then(function(err, result) {
         // adding a link model to the Links collection
@@ -106,14 +105,9 @@ function(req, res) {
 /************************************************************/
 
 app.get('/login', function(req, res) {
-  // if (req.session.user) {
-  //   req.session.destroy(function() {
-  //     res.render('login');
-  //   });
-  // } else {
   res.render('login');
-  // }
 });
+
 
 
 app.post('/login', function(req, res) {
@@ -121,17 +115,15 @@ app.post('/login', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
 
-  console.log('username: ', username);
-  console.log('pw: ', password);
-
-
-  db.knex.select('username', 'password', 'id').from('users').where({username: username})
+  db.knex.select('username', 'password', 'id', 'salt').from('users').where({username: username})
   .then(function(data) {
     if (data.length === 0) {
       res.redirect('/login');
     } else {
-  //Todo: update pw checking method
-      if (password === data[0]['password']) {
+      var salt = data[0]['salt'];
+      var hash = data[0]['password'];
+
+      if (hash === bcrypt.hashSync(password, salt)) {
         req.session.regenerate(function() {
           req.session.user = username;
           req.session.userId = data[0]['id'];
@@ -163,23 +155,28 @@ app.post('/signup', function(req, res) {
   // query the database for existing usernames
   db.knex.select('username').from('users').where({username: username})
   .then(function(data) {
-    console.log('DATA', data);
+
     if (data.length === 0) {
-      new User({username: username, password: password}).fetch()
+
+      var salt = bcrypt.genSaltSync(10);
+      var hash = bcrypt.hashSync(password, salt);
+
+      new User({username: username, password: hash}).fetch()
       .then(function(err, success) {
       // create session and loads index
         Users.create({
           username: username,
-          password: password
+          password: hash,
+          salt: salt
         }).then(function(result) {
           db.knex.select('username', 'id').from('users').where({username: username})
           .then(function(result) {
-            console.log('RESULT', result);
+
             req.session.regenerate(function() {
               req.session.user = username;
               req.session.userId = result[0]['id'];
               res.redirect('/');
-              console.log('RES.HEADERS', res.headers);
+
             });
           });
         });
@@ -190,7 +187,6 @@ app.post('/signup', function(req, res) {
 
         // res.redirect('login');
 });
-
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
